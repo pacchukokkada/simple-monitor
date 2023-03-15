@@ -10,4 +10,4 @@ sh "$GATEDIR/no-dups.sh" --ignore "**/*.json"
 npm audit
 sh "$GATEDIR/js-test.sh"
 
-echo Check Complete :\)
+echo Check Complete :\
