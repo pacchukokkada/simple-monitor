@@ -1,38 +1,55 @@
+const {convertToCelcius} = require('./unitConverter');
 const factors = {
-  'temperature': {'name': 'temperature', 'max': 45, 'min': 0, 'unit': '°C'},
-  'stateOfCharge': {'name': 'state of charge', 'max': 80, 'min': 20, 'unit': '%'},
-  'chargeRate': {'name': 'charge rate', 'max': 0.8, 'min': 0, 'unit': 'C'},
+  'temperature': {'name': 'TEMPERATURE', 'max': 45, 'min': 0},
+  'stateOfCharge': {'name': 'SOC', 'max': 80, 'min': 20},
+  'chargeRate': {'name': 'CHARGE_RATE', 'max': 0.8, 'min': 0},
 };
-let errorMsg = 'Battery Condition is Good';
+const tolerance = 0.05;
+const batteryCondtion = {
+  'breach': {},
+  'warning': {},
+};
 
-function checkBattery(factor, currentValue) {
+function refreshBatteryCondition() {
+  batteryCondtion['isGood'] = true;
+  Object.keys(factors).forEach((key) => {
+    batteryCondtion['breach'][key] = '';
+  });
+  Object.keys(factors).forEach((key) => {
+    batteryCondtion['warning'][key] = '';
+  });
+}
 
-  if (currentValue > factors[factor].max) {
-    errorMsg = `${factors[factor].name} is too high (${currentValue}${factors[factor].unit})`;
-    console.log(errorMsg);
-    return false;
-  } else if (currentValue < factors[factor].min ) {
-    errorMsg = `${factors[factor].name} is too low (${currentValue}${factors[factor].unit})`;
-    console.log(errorMsg);
-    return false;
+function checkForWarning(factor, currentValue) {
+  if (currentValue >= (factors[factor].max - factors[factor].max/tolerance).toFixed(2)) {
+    batteryCondtion['warning'][factor] = `HIGH_${factors[factor].name}_WARNING`;
+    console.log((factors[factor].max - factors[factor].max/tolerance).toFixed(2));
+  } else if (currentValue <= (factors[factor].min + factors[factor].max/tolerance).toFixed(2)) {
+    batteryCondtion['warning'][factor] = `LOW_${factors[factor].name}_WARNING`;
+    console.log((factors[factor].min + factors[factor].max/tolerance).toFixed(2));
   }
-  return true;
 }
-
-
-function batteryIsOk(currentBatteryStatus) {
-  const isBatteryOk = Object.entries(currentBatteryStatus).
-      every(([key, value]) => checkBattery(key, value));
-  return isBatteryOk;
+function checkForBreach(factor, currentValue) {
+  if (currentValue > factors[factor].max) {
+    batteryCondtion['breach'][factor] = `HIGH_${factors[factor].name}_BREACH`;
+    batteryCondtion['isGood'] = false;
+  } else if (currentValue < factors[factor].min ) {
+    batteryCondtion['breach'][factor] = `LOW_${factors[factor].name}_BREACH`;
+    batteryCondtion['isGood'] = false;
+  } else {
+    checkForWarning(factor, currentValue);
+  }
 }
+function batteryIsOk(currentBatteryStatus, unit) {
+  const temperatureValue = currentBatteryStatus.temperature;
+  // converting temperature to celsius
+  currentBatteryStatus.temperature = convertToCelcius(temperatureValue, unit);
 
-function getErrorMsg() {
-  return errorMsg;
+  Object.entries(currentBatteryStatus).
+      forEach(([key, value]) => checkForBreach(key, value));
+  return batteryCondtion;
 }
-
 module.exports = {
   batteryIsOk,
-  getErrorMsg,
+  refreshBatteryCondition,
 };
-
-// https://github.com/numocityadmin/nodejs-template
