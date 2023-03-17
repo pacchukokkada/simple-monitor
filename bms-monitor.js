@@ -21,9 +21,9 @@ function refreshBatteryCondition() {
 }
 
 function checkForWarning(factor, currentValue) {
-  if (currentValue >= (factors[factor].max - factors[factor].max/tolerance).toFixed(2)) {
+  if (currentValue >= (factors[factor].max - factors[factor].max*tolerance).toFixed(2)) {
     batteryCondtion['warning'][factor] = `HIGH_${factors[factor].name}_WARNING`;
-  } else if (currentValue <= (factors[factor].min + factors[factor].max/tolerance).toFixed(2)) {
+  } else if (currentValue <= (factors[factor].min + factors[factor].max*tolerance).toFixed(2)) {
     batteryCondtion['warning'][factor] = `LOW_${factors[factor].name}_WARNING`;
   }
 }
