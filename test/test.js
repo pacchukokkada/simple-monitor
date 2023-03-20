@@ -84,12 +84,11 @@ function test() {
       assert.equal(noWarning(batteryCondition), 0);
       refreshBatteryCondition();
     });
+
     it('there should be warning', () => {
       batteryCondition = check(2.25, 24.00, 0.04, 'celsius');
       assert.notEqual(noWarning(batteryCondition), 0);
       refreshBatteryCondition();
-    });
-    it('there should be warning', () => {
       batteryCondition = check(42.75, 76.00, 0.76, 'celsius');
       assert.notEqual(noWarning(batteryCondition), 0);
       refreshBatteryCondition();
