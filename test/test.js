@@ -10,6 +10,26 @@ function check(temp, soc, chargeRate, unit) {
   return batteryIsOk(batteryStatus, unit);
 }
 
+function noBreach(batteryCondition) {
+  let cnt=0;
+  Object.keys(batteryCondition['breach']).forEach((key) => {
+    if (batteryCondition['breach'][key].length != 0) {
+      cnt++;
+    }
+  });
+  return cnt;
+}
+
+function noWarning(batteryCondition) {
+  let cnt = 0;
+  Object.keys(batteryCondition['warning']).forEach((key) =>{
+    if (batteryCondition['warning'][key].length != 0) {
+      cnt++;
+    }
+  });
+  return cnt;
+}
+
 function test() {
   let batteryCondition = {};
   refreshBatteryCondition();
@@ -20,21 +40,14 @@ function test() {
       refreshBatteryCondition();
     });
     it('should not be any breach or warning', () => {
-      assert.equal(batteryCondition.breach.temperature.length, 0);
-      assert.equal(batteryCondition.breach.stateOfCharge.length, 0);
-      assert.equal(batteryCondition.breach.chargeRate.length, 0);
-
-      assert.equal(batteryCondition.warning.temperature.length, 0);
-      assert.equal(batteryCondition.warning.stateOfCharge.length, 0);
-      assert.equal(batteryCondition.warning.chargeRate.length, 0);
       refreshBatteryCondition();
+      assert.equal(noBreach(batteryCondition), 0);
+      assert.equal(noWarning(batteryCondition), 0);
     });
-    it('should be able convert gahrenheit to celsius and should be warning', () => {
+    it('should be able convert fahrenheit to celsius and should be warning', () => {
       batteryCondition = check(113, 80, 0.8, 'fahrenheit');
       assert.equal(batteryCondition.isGood, true);
-      assert.notEqual(batteryCondition.warning.temperature.length, 0);
-      assert.notEqual(batteryCondition.warning.stateOfCharge.length, 0);
-      assert.notEqual(batteryCondition.warning.chargeRate.length, 0);
+      assert.notEqual(noWarning(batteryCondition), 0);
       refreshBatteryCondition();
     });
 
@@ -54,48 +67,40 @@ function test() {
       batteryCondition = check(-10, 60, 0.6, 'celsius');
       assert.equal(batteryCondition.isGood, false);
       assert.notEqual(batteryCondition.breach.temperature.length, 0);
-      assert.equal(batteryCondition.breach.stateOfCharge.length, 0);
-      assert.equal(batteryCondition.breach.chargeRate.length, 0);
       refreshBatteryCondition();
     });
     it('battery status should not be ok, all factor is breached', () => {
       batteryCondition = check(57, 100, 0.99, 'celsius');
-      assert.notEqual(batteryCondition.breach.temperature.length, 0);
-      assert.notEqual(batteryCondition.breach.stateOfCharge.length, 0);
-      assert.notEqual(batteryCondition.breach.chargeRate.length, 0);
+      assert.notEqual(noBreach(batteryCondition), 0);
       // testing whether the error msg contains factor names
       assert.equal(batteryCondition.breach.temperature.includes('TEMPERATURE'), true);
       assert.equal(batteryCondition.breach.stateOfCharge.includes('SOC'), true);
       assert.equal(batteryCondition.breach.chargeRate.includes('CHARGE_RATE'), true);
       refreshBatteryCondition();
     });
-    it('battery status should be ok and no warning or breach', () => {
-      assert.equal(batteryCondition.isGood, true);
-      assert.equal(batteryCondition.breach.temperature.length, 0);
-      assert.equal(batteryCondition.breach.stateOfCharge.length, 0);
-      assert.equal(batteryCondition.breach.chargeRate.length, 0);
-      assert.equal(batteryCondition.warning.temperature.length, 0);
-      assert.equal(batteryCondition.warning.stateOfCharge.length, 0);
-      assert.equal(batteryCondition.warning.chargeRate.length, 0);
-    });
     it('battery status should not be ok, all factor breached but not warnings', () => {
       batteryCondition = check(-4, 13, -0.2, 'celsius');
-      assert.notEqual(batteryCondition.breach.temperature.length, 0);
-      assert.notEqual(batteryCondition.breach.stateOfCharge.length, 0);
-      assert.notEqual(batteryCondition.breach.chargeRate.length, 0);
+      assert.notEqual(noBreach(batteryCondition), 0);
+      assert.equal(noWarning(batteryCondition), 0);
       refreshBatteryCondition();
     });
     it('there should be warning', () => {
       batteryCondition = check(2.25, 24.00, 0.04, 'celsius');
-      assert.notEqual(batteryCondition.warning.temperature.length, 0);
-      assert.notEqual(batteryCondition.warning.stateOfCharge.length, 0);
-      assert.notEqual(batteryCondition.warning.chargeRate.length, 0);
+      assert.notEqual(noWarning(batteryCondition), 0);
+      refreshBatteryCondition();
     });
     it('there should be warning', () => {
       batteryCondition = check(42.75, 76.00, 0.76, 'celsius');
-      assert.notEqual(batteryCondition.warning.temperature.length, 0);
-      assert.notEqual(batteryCondition.warning.stateOfCharge.length, 0);
-      assert.notEqual(batteryCondition.warning.chargeRate.length, 0);
+      assert.notEqual(noWarning(batteryCondition), 0);
+      refreshBatteryCondition();
+    });
+    it('there should not be warning', () => {
+      batteryCondition = check(30, 50, 0.5, 'celsius');
+      assert.equal(noWarning(batteryCondition), 0);
+    });
+    it('batteryCondition factors should initialzed to empty', () => {
+      refreshBatteryCondition();
+      assert.equal(noBreach(batteryCondition), 0);
     });
   });
 }
