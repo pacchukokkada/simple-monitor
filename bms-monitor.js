@@ -41,7 +41,6 @@ function checkForBreach(factor, currentValue) {
 }
 function batteryIsOk(currentBatteryStatus, unit) {
   const temperatureValue = currentBatteryStatus.temperature;
-  // converting temperature to celsius
   currentBatteryStatus.temperature = convertToCelcius(temperatureValue, unit);
 
   Object.entries(currentBatteryStatus).
