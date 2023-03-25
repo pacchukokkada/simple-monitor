@@ -5,49 +5,57 @@ const factors = {
   'chargeRate': {'name': 'CHARGE_RATE', 'max': 0.8, 'min': 0},
 };
 const tolerance = 0.05;
-const batteryCondtion = {
-  'breach': {},
-  'warning': {},
-};
-
-function refreshBatteryCondition() {
-  batteryCondtion['isGood'] = true;
-  Object.keys(factors).forEach((key) => {
-    batteryCondtion['breach'][key] = '';
-  });
-  Object.keys(factors).forEach((key) => {
-    batteryCondtion['warning'][key] = '';
-  });
-}
 
 function checkForWarning(factor, currentValue) {
   if (currentValue >= (factors[factor].max - factors[factor].max*tolerance).toFixed(2)) {
-    batteryCondtion['warning'][factor] = `HIGH_${factors[factor].name}_WARNING`;
+    return `HIGH_${factors[factor].name}_WARNING`;
   } else if (currentValue <= (factors[factor].min + factors[factor].max*tolerance).toFixed(2)) {
-    batteryCondtion['warning'][factor] = `LOW_${factors[factor].name}_WARNING`;
+    return `LOW_${factors[factor].name}_WARNING`;
   }
+  return '';
 }
 
 function checkForBreach(factor, currentValue) {
   if (currentValue > factors[factor].max) {
-    batteryCondtion['breach'][factor] = `HIGH_${factors[factor].name}_BREACH`;
-    batteryCondtion['isGood'] = false;
+    return `HIGH_${factors[factor].name}_BREACH`;
   } else if (currentValue < factors[factor].min ) {
-    batteryCondtion['breach'][factor] = `LOW_${factors[factor].name}_BREACH`;
-    batteryCondtion['isGood'] = false;
+    return `LOW_${factors[factor].name}_BREACH`;
   } else {
-    checkForWarning(factor, currentValue);
+    return '';
   }
 }
+
+function checkIsOk(condition) {
+  const breachs = Object.values(condition);
+  for (let i=0; i<breachs.length; i++) {
+    if (breachs[i] != '') {
+      return false;
+    }
+  }
+  return true;
+}
+
 function batteryIsOk(currentBatteryStatus, unit) {
   const temperatureValue = currentBatteryStatus.temperature;
   currentBatteryStatus.temperature = convertToCelcius(temperatureValue, unit);
-
-  Object.entries(currentBatteryStatus).
-      forEach(([key, value]) => checkForBreach(key, value));
+  const breach = {};
+  const warning = {};
+  const factors = Object.keys(currentBatteryStatus);
+  for (let i=0; i<factors.length; i++) {
+    const res = checkForBreach(factors[i], currentBatteryStatus[factors[i]]);
+    breach[factors[i]] = res;
+  }
+  for (let i=0; i<factors.length; i++) {
+    const res = checkForWarning(factors[i], currentBatteryStatus[factors[i]]);
+    warning[factors[i]] = res;
+  }
+  const isOk = checkIsOk(breach);
+  const batteryCondtion = {'isOk': isOk, breach, warning};
   return batteryCondtion;
 }
+
 module.exports = {
   batteryIsOk,
-  refreshBatteryCondition,
+  checkForBreach,
+  checkForWarning,
 };
